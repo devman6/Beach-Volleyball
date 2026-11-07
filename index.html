@@ -199,6 +199,19 @@ function idbGet(cb){idbOpen(db=>{if(!db)return cb(null);try{const q=db.transacti
 const storageOK=(function(){let a=false,b=false;try{localStorage.setItem('bvt','1');a=localStorage.getItem('bvt')==='1';localStorage.removeItem('bvt')}catch(e){}try{document.cookie='bvt=1;path=/;max-age=60';b=document.cookie.indexOf('bvt=1')>=0}catch(e){}return a||b})();
 let curScr='title';
 let spInit=false,spCD2={p:0,a:0},mahoT={p:0,a:0},mahoStk={p:0,a:0},mahoHit={p:-999,a:-999},mahoAdCD={p:0,a:0},mahoCut=null,mahoBy=false,mahoWheel={p:0,a:0},mahoPulse={p:0,a:0},mahoLastStk={p:0,a:0};
+function mahoSpikeCurve(s,x0,y0,vx0,vy0){
+ if(s*(NX-x0)<=2)return null;
+ const g=GV*(gravityGlitch>0?1.45:1);
+ const sim=(vx,vy,n,a)=>{let x=x0,y=y0,v=vy,relief=Math.hypot(x0-clamp(x0,NX-4,NX+4),y0-clamp(y0,NT,GR))<BR+2;
+  for(let i=0;i<260;i++){if(i<n)v+=a;else if(i<2*n)v-=a;v+=g;const px=x,py=y;x+=s*vx;y+=v;
+   if(x<BR+4||x>W-BR-4)return s*(NX-x)<0;
+   for(let k=1;k<=4;k++){const sx=px+(x-px)*k/4,sy=py+(y-py)*k/4,dd=Math.hypot(sx-clamp(sx,NX-4,NX+4),sy-clamp(sy,NT,GR));
+    if(relief){if(dd>=BR+2)relief=false}else if(dd<BR+1.5)return false}
+   if(y>=GR-BR)return s*(x-NX)>=24}return false};
+ if(sim(vx0,vy0,0,0))return{n:0,a:0,dv:0};
+ for(const dv of[0,-1.5,-3,-5,-8,-12,-18,-26])for(const D of[.5,1,1.5,2,3,4,5,6,8,10,13,16,20,25,30,40,55,75,100])for(const n of[2,3,4,6,8,12,18,26])if(sim(vx0,vy0+dv,n,-D/n))return{n:n,a:-D/n,dv:dv};
+ for(const f of[.8,.65,.5,.38,.28,.2,.14,.1])for(let vy2=12;vy2>=-30;vy2-=2)if(sim(vx0*f,vy2,0,0))return{n:0,a:0,dv:vy2-vy0,vx:vx0*f};
+ return null}
 function mahoPose(sty,swp){const e1=v=>v*v*(3-2*v);let ang=.55,ext=0;
  if(swp!==null&&swp!==undefined){
   if(sty==='set'){ang=.55+(3.0-.55)*e1(Math.min(1,swp/.55))}
@@ -207,7 +220,7 @@ function mahoPose(sty,swp){const e1=v=>v*v*(3-2*v);let ang=.55,ext=0;
  return{ang:ang,ext:ext}}
 function mahoGeo(c,face,sty,swp,sc){const o=mahoPose(sty,swp),ang=o.ang,a1=ang*.72,AL=27*(1+o.ext),shx=40,shy=-112,ex=shx+Math.sin(a1)*AL,ey=shy+Math.cos(a1)*AL,hx=ex+Math.sin(ang)*AL,hy=ey+Math.cos(ang)*AL,bx=hx+Math.sin(ang)*80,by=hy+Math.cos(ang)*80,w=(x,y)=>({x:c.x+face*x*sc,y:c.y+y*sc});return[w(shx,shy),w(ex,ey),w(hx,hy),w(bx,by)]}
 function mahoSegD(px,py,a,b){const dx=b.x-a.x,dy=b.y-a.y,l=dx*dx+dy*dy;let u=l?((px-a.x)*dx+(py-a.y)*dy)/l:0;u=Math.max(0,Math.min(1,u));return Math.hypot(px-(a.x+dx*u),py-(a.y+dy*u))}
-function mahoSwordHit(c){const sw=c.sw,face=c===P?1:-1,sc=1.5,sty=sw.type;if(sty==='bump')return Math.hypot(B.x-c.x,B.y-(c.y-85*sc))<=94*sc*1.1;const cur=Math.min(1,1-Math.max(0,sw.t-1)/18),r=BR+22*sc;
+function mahoSwordHit(c){const sw=c.sw,face=c===P?1:-1,sc=1.5,sty=sw.type;if(sty==='spike'&&B.y>c.y-88*sc)return false;if(sty==='bump'||sty==='spike'){if(Math.hypot(B.x-c.x,B.y-(c.y-85*sc))<=94*sc*1.1)return true;if(sty==='bump')return false}const cur=Math.min(1,1-Math.max(0,sw.t-1)/18),r=BR+22*sc;
  for(let k=0;k<3;k++){const pts=mahoGeo(c,face,sty,Math.max(0,cur-k*.0275),sc);for(let i=0;i<3;i++)if(mahoSegD(B.x,B.y,pts[i],pts[i+1])<=r)return true}
  if(sty==='set'&&Math.hypot(B.x-(c.x+face*20*sc),B.y-(c.y-155*sc))<=BR+45*sc)return true;
  return false}
@@ -274,10 +287,16 @@ const claimable=()=>{ensureSave();return save.q.list.filter(q=>{const d=QPOOL.fi
 /* ---------- admin panel codes (stored only as hashes, never shown) ---------- */
 const h53=(s,seed)=>{seed=seed||0;let h1=0xdeadbeef^seed,h2=0x41c6ce57^seed;for(let i=0,ch;i<s.length;i++){ch=s.charCodeAt(i);h1=Math.imul(h1^ch,2654435761);h2=Math.imul(h2^ch,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return 4294967296*(2097151&h2)+(h1>>>0)};
 const CODES={'7997015864004530':{coins:1000},'3414902205677767':{unlock:'poseidon'}};
+function sorryPop(t){const d=document.createElement('div');d.textContent=t;d.style.cssText='position:fixed;left:50%;top:38%;transform:translate(-50%,-50%) scale(.9);z-index:99999;background:#1f1630;color:#fff;border:3px solid #ff5b8a;border-radius:16px;padding:18px 26px;font:800 22px Nunito,system-ui,sans-serif;text-align:center;white-space:pre-line;max-width:80vw;box-shadow:0 12px 40px rgba(0,0,0,.5);opacity:0;transition:opacity .35s,transform .35s;pointer-events:none';document.body.appendChild(d);requestAnimationFrame(()=>{d.style.opacity='1';d.style.transform='translate(-50%,-50%) scale(1)'});setTimeout(()=>{d.style.opacity='0'},3200);setTimeout(()=>d.remove(),3700)}
 function redeem(){const el=document.getElementById('acode'),m=document.getElementById('aMsg');
  const v=String(el&&el.value||'').trim().toLowerCase().replace(/\s+/g,' ');if(el)el.value='';
- if(v==='/money'){save.coins=1e100;persist();show('admin');const mm=document.getElementById('aMsg');if(mm)mm.textContent='Admin code accepted: infinite coins enabled.';return}
- if(v==='/yen'){save.yen=1e100;persist();show('admin');const mm=document.getElementById('aMsg');if(mm)mm.textContent='Admin code accepted: infinite yen enabled.';return}
+ if(/^sorry[.!]*$/.test(v)){if(save.sorryUsed){show('admin');const mm=document.getElementById('aMsg');if(mm)mm.textContent='You already used this code.';return}save.sorryUsed=true;save.coins=(save.coins||0)+10000;persist();show('admin');const mm=document.getElementById('aMsg');if(mm)mm.textContent='Sorry your progress was reset. If you would like it back, talk to an admin. +10,000 coins.';sorryPop('Sorry your progress was reset.\nIf you would like it back, talk to an admin.');return}
+ if(v==='/money'){let t;if(save.coins>=1e90){save.coins=typeof save.coinsBak==='number'?save.coinsBak:0;delete save.coinsBak;t='Admin code accepted.'}else{save.coinsBak=save.coins;save.coins=1e100;t='Admin code accepted.'}persist();show('admin');const mm=document.getElementById('aMsg');if(mm)mm.textContent=t;return}
+ {const nv=/^-v(\d{1,9})?$/.exec(v);if(nv){const n=nv[1]===undefined?1:parseInt(nv[1],10),amt=1000*n;save.coins=Math.max(0,(save.coins||0)-amt);persist();show('admin');const mm=document.getElementById('aMsg');if(mm)mm.textContent='Code accepted: -'+amt.toLocaleString()+' coins.';return}
+ const ny=/^-y(\d{1,9})?$/.exec(v);if(ny){const n=ny[1]===undefined?1:parseInt(ny[1],10),amt=500*n;save.yen=Math.max(0,(save.yen||0)-amt);persist();show('admin');const mm=document.getElementById('aMsg');if(mm)mm.textContent='Code accepted: -'+amt.toLocaleString()+' yen.';return}
+ const mc=/^v(\d{1,9})?$/.exec(v);if(mc){const n=mc[1]===undefined?1:parseInt(mc[1],10),amt=1000*n;save.coins=(save.coins||0)+amt;persist();show('admin');const mm=document.getElementById('aMsg');if(mm)mm.textContent='Code accepted: +'+amt.toLocaleString()+' coins.';return}
+ const my=/^y(\d{1,9})?$/.exec(v);if(my){const n=my[1]===undefined?1:parseInt(my[1],10),amt=500*n;save.yen=(save.yen||0)+amt;persist();show('admin');const mm=document.getElementById('aMsg');if(mm)mm.textContent='Code accepted: +'+amt.toLocaleString()+' yen.';return}}
+ if(v==='/yen'){let t;if((save.yen||0)>=1e90){save.yen=typeof save.yenBak==='number'?save.yenBak:0;delete save.yenBak;t='Admin code accepted.'}else{save.yenBak=save.yen||0;save.yen=1e100;t='Admin code accepted.'}persist();show('admin');const mm=document.getElementById('aMsg');if(mm)mm.textContent=t;return}
  const c=CODES[h53(v)];
  if(c){let t='Code accepted.';
   if(c.coins){save.coins+=c.coins;t='Code accepted: +'+c.coins+' coins.'}
@@ -320,7 +339,7 @@ function quickDiffFor(skin){const p=skin&&Number(skin.p)||0;let d;if(p>=5000)d={
 function startQuickQueue(){if(queueTimer)clearTimeout(queueTimer);show('quickloading');queueTimer=setTimeout(()=>{queueTimer=null;if(curScr!=='quickloading')return;onlineSoloOpp=randomOnlineOpponent();start('quickmatch');say('MATCH FOUND: '+onlineSoloOpp.n.toUpperCase(),90)},2400)}
 function cancelQuickQueue(){if(queueTimer)clearTimeout(queueTimer);queueTimer=null;show('quickmenu')}
 const SCR={
- title:()=>card('<h1>Beach Volleyball</h1><p>Choose a mode</p>'+btn('Single Player','data-go="menu"')+btn('Two Player','data-go="two"')+btn('Play Online Solo','data-go="quickmenu"')+btn('Host / Join game','data-go="online"','ghost')+btn('⚡ JJK Event','data-go="jjk"','jjk')+'<div class="grid">'+btn('Shop','data-go="shop"','ghost sm')+btn('Quests'+(claimable()?' ('+claimable()+')':''),'data-go="quests"','ghost sm')+btn('Badges','data-go="badges"','ghost sm')+btn('Admin panel','data-go="admin"','ghost sm')+'</div>'),
+ title:()=>card('<h1>Beach Volleyball</h1><p>Choose a mode</p>'+btn('Single Player','data-go="menu"')+btn('Two Player','data-go="two"')+btn('Play Online Solo','data-go="quickmenu"')+btn('Host / Join game','data-go="online"','ghost')+btn('⚡ JJK Event','data-go="jjk"','jjk')+'<div class="grid">'+btn('Shop','data-go="shop"','ghost sm')+btn('Quests'+(claimable()?' ('+claimable()+')':''),'data-go="quests"','ghost sm')+btn('Badges','data-go="badges"','ghost sm')+btn('Admin panel','data-go="admin"','ghost sm')+'</div>'+btn('Want your progress back? Talk to a dev','data-go="admin"','ghost sm')),
  quickmenu:()=>card('<h2>Play Online</h2><p>Find a random opponent and play a quick match.</p><div class="warn">Online matchmaking uses a local AI opponent, not a live online player. Host / Join is still available separately for friend matches.</div>'+btn('Play Online Solo','data-act="quicksolo"')+btn('Back','data-go="title"','ghost')) ,
  quickloading:()=>card('<h2>Finding opponent...</h2><div class="loader" aria-hidden="true"></div><p>Searching the arena and selecting a random character...</p>'+btn('Cancel','data-act="cancelqueue"','ghost')) ,
  playonline:()=>card('<h2>Play Online</h2><p>Choose how you want to queue.</p><div class="warn">Online play depends on the connection service and your network. School or managed Wi-Fi may block it.</div>'+btn('Play solo vs AI','data-go="quickmenu"')+btn('Play with a duo','data-go="duo"')+btn('Join / host a friend match','data-go="online"','ghost')+btn('Back','data-go="title"','ghost')),
@@ -528,14 +547,14 @@ const p2list=()=>[RILEY,...SKINS.filter(x=>save.own.includes(x.id))];
 const CK2=()=>mahoEff('a',onlineOn?skinById(netSkin[1]):p2list()[p2i%p2list().length]);
 function start2(){setBG('x');gravityGlitch=roundTurbo=roundQuirkNo=playerSlow=0;cv.style.transform='';flipT=invertT=shenCD=0;suddenDeath=false;marcusForm=marcusCD=marcusStomp=marcusRoar=marcusSpikeBoost=0;sharkWin=false;shark=null;ghosts=cyrusStartGhosts();A.fly=false;A.dj=A2.dj=A3.dj=false;slowA=0;usedWind=false;pendFx=null;wheelRes=null;resetAbil();cloneOn=false;gim=0;phase=1;cut=null;blinkOn=false;blinkT=0;finalMsg=false;cyrusHitCount=0;ballReserved=false;sacAnim=null;players=2;ghosts=cyrusStartGhosts();cur='two';ps=0;as=0;earned=0;earnedY=0;server='p';ui.style.display='none';ui.innerHTML='';hintEl.innerHTML=hintFor(H2);mode='game';paused=false;syncPB();doServe();cv.focus()}
 function doServe(){roundTurbo=0;playerSlow=0;invertT=0;gravityGlitch=0;flipT=0;cv.style.transform=(is404()&&phase>=3&&Math.max(ps,as)>=WIN-1)?'rotate(180deg)':'';ballReserved=false;st='serve';stT=55;P.x=225;A.x=is404()?780:675;A2.x=560;A2.y=GR;A2.vy=0;P.sw=A.sw=A2.sw=null;C.x=140;C.y=GR;C.sw=null;A.eaten=A2.eaten=P.eaten=false;shark=null;A.plan=false;A.react=0;A.off=0;A.whiff=false;A.spk=false;
- B.x=server==='p'?225:675;B.y=150;B.vx=0;B.vy=0;B.cd=0;B.fx=0;B.flt=0;B.top=0;serving=true;serveBy=server;say(players===2?pn(server==='p'?0:1)+' serves':(server==='p'?'Your serve':(is404()?'They serve':OPP().n+' serves')),50);if(is404())rageUp()}
+ B.x=server==='p'?225:675;B.y=150;B.vx=0;B.vy=0;B.cd=0;B.fx=0;B.flt=0;B.top=0;B.cv=0;serving=true;serveBy=server;say(players===2?pn(server==='p'?0:1)+' serves':(server==='p'?'Your serve':(is404()?'They serve':OPP().n+' serves')),50);if(is404())rageUp()}
 function say(t,n){msg=t;msgT=n;msgLocal=false}
 function cyrusStartGhosts(){cyrusHitCount=0;cyrusHC={p:0,a:0};const out=[];if(CK().id==='cyrus')out.push({x:P.x+55,y:P.y-145,phase:0,side:'p'});if((players===2||onlineOn)&&CK2().id==='cyrus')out.push({x:A.x-55,y:A.y-145,phase:0,side:'a'});return out}
 function startGhostSacrifice(){if(CK().id!=='cyrus'||ghosts.length===0||sacAnim)return false;const gi=ghosts.findIndex(q=>!q.side||q.side==='p');if(gi<0)return false;const gh=ghosts.splice(gi,1)[0];sacAnim={x:gh.x,y:gh.y,tx:B.x,ty:B.y,frame:0,phase:gh.phase||0};ballReserved=false;P.x=225;P.y=GR;P.vy=0;P.sw=null;st='serve';stT=42;B.x=225;B.y=150;B.vx=0;B.vy=0;B.cd=0;B.fx=0;B.flt=0;B.top=0;serving=true;serveBy='p';say('A ghost sacrificed itself!',40);return true}
 function startGhostSacrificeFor(side){if(side==='p')return startGhostSacrifice();if(CK2().id!=='cyrus'||sacAnim)return false;const gi=ghosts.findIndex(q=>q.side==='a');const gh=gi>=0?ghosts.splice(gi,1)[0]:{x:A.x-55,y:A.y-145,phase:0,side:'a'};sacAnim={x:gh.x,y:gh.y,tx:B.x,ty:B.y,frame:0,phase:gh.phase||0};ballReserved=false;A.x=675;A.y=GR;A.vy=0;A.sw=null;st='serve';stT=42;B.x=675;B.y=150;B.vx=0;B.vy=0;B.cd=0;B.fx=0;B.flt=0;B.top=0;serving=true;serveBy='a';say('A ghost sacrificed itself!',40);return true}
 
 function say2(t,n){msg=t;msgT=n;msgLocal=true}
-function point(who){st='pause';stT=75;B.y=GR-BR;B.vy=0;B.vx*=.3;server=who;const two=players===2;
+function point(who){st='pause';stT=75;B.y=GR-BR;B.vy=0;B.cv=0;B.vx*=.3;server=who;const two=players===2;
  if(who==='p'){ps++;if(!two){const q=Math.round(4*cfg.mult*(hasFx(ab(),'midas')?3:1)+(hasFx(ab(),'coin')?2:0)+(hasFx(ab(),'void')?5:0));save.coins+=q;earned+=q;track('point')}say(two?pn(0)+' scores':'Point!',70)}else{as++;say(two?pn(1)+' scores':(is404()?'They score':OPP().n+' scores'),70)}
  if(who==='p'&&is404()&&((phase===1&&ps>=WIN)||(phase===2&&ps>=WIN))){startCut();return}
  if(who==='p'&&is404()&&phase>=3&&ps>=WIN){startVictoryCut();return}
@@ -759,7 +778,7 @@ function skipCut(){if(!cut)return;if(cut.victory)finishVictoryCut();else finishC
 function anyCutOn(){return !!(cut||mahoCut||sukCut||(shark&&!shark.done&&st==='shark'))}
 function skipAnyCut(){if(cut){skipCut();return}if(mahoCut){mahoCut.t=Math.max(mahoCut.t,299);return}if(sukCut){sukCut.t=Math.max(sukCut.t,209);return}if(shark&&!shark.done&&st==='shark'){shark.t=Math.max(shark.t,321)}}
 function spawnGhostChance(side='p'){cyrusHC[side]=(cyrusHC[side]||0)+1;const count=ghosts.filter(q=>(q.side||'p')===side).length;if(cyrusHC[side]%5===0&&count<5){const owner=side==='p'?P:A;ghosts.push({x:owner.x+(side==='p'?55:-55),y:owner.y-145,phase:ghosts.length*.7,side});say2('A NEW GHOST JOINS THE TEAM!',55)}}
-function hitBall(c,type,powerBoost=1){{const sd0=c===P?'p':'a';if(mahoT[sd0]>0)mahoHit[sd0]=tick}B.last=c===P?'p':'a';if(c===P)pendFx=type;if(!skelHit&&(c===P||players===2)&&(c===P?CK():CK2()).id==='cinder')cinderHit(c);if(c===P&&ballReserved)ballReserved=false;const s=c===P?1:-1,dir=inp(c).dir,ck=c===P?CK():CK2(),ai=players===1,ghostBoost=(c===P&&ck.id==='cyrus'&&type==='spike')?Math.pow(1.1,ghosts.length):1,upMax=Math.sqrt(2*GV*Math.max(1,B.y-40));B.fx=0;B.flt=0;B.top=0;
+function hitBall(c,type,powerBoost=1){{const sd0=c===P?'p':'a';if(mahoT[sd0]>0)mahoHit[sd0]=tick}B.last=c===P?'p':'a';if(c===P)pendFx=type;if(!skelHit&&(c===P||players===2)&&(c===P?CK():CK2()).id==='cinder')cinderHit(c);if(c===P&&ballReserved)ballReserved=false;const s=c===P?1:-1,dir=inp(c).dir,ck=c===P?CK():CK2(),ai=players===1,ghostBoost=(c===P&&ck.id==='cyrus'&&type==='spike')?Math.pow(1.1,ghosts.length):1,upMax=Math.sqrt(2*GV*Math.max(1,B.y-40));B.fx=0;B.flt=0;B.top=0;B.cv=0;
  const ret=()=>{if(ai){A.plan=Math.random()<cfg.set;A.off=(Math.random()*2-1)*cfg.err;A.react=cfg.lag;A.whiff=Math.random()<cfg.miss;A.spk=Math.random()<cfg.spk;if(A.spk)A.plan=true}};
  const sv=serving&&ck.serves&&((c===P&&serveBy==='p')||(c===A&&serveBy==='a'));serving=false;
  if(sv){
@@ -773,7 +792,7 @@ function hitBall(c,type,powerBoost=1){{const sd0=c===P?'p':'a';if(mahoT[sd0]>0)m
  else if(type==='spike'){const vxm=11*(ck.sp||1),tx=ck.dsp?(s>0?850:50):clamp(s>0?650+dir*150:250+dir*150,40,860),x0=B.x,y0=B.y,t=Math.max(6,Math.abs(tx-x0)/vxm);
   let vy=(GR-BR-y0-.5*GV*t*t)/t;const tn=Math.abs(NX-x0)/vxm;
   if(tn>0){const yn=y0+vy*tn+.5*GV*tn*tn;if(yn>NT-BR-6)vy=(NT-BR-6-y0-.5*GV*tn*tn)/tn}
-  B.vx=s*vxm;B.vy=clamp(vy,-12,14);if(ck.id==='sharkfelix'){const power=powerBoost>1?3:2;B.vx*=power;B.vy*=power;felixFx=32;felixFxSide=c===P?'p':'a'}else if(powerBoost>1){B.vx*=powerBoost;B.vy*=powerBoost}B.fx=22;ret()}
+  B.vx=s*vxm;B.vy=clamp(vy,-12,14);if(ck.id==='sharkfelix'){const power=powerBoost>1?3:2;B.vx*=power;B.vy*=power;felixFx=32;felixFxSide=c===P?'p':'a'}else if(powerBoost>1){B.vx*=powerBoost;B.vy*=powerBoost}if(ck.maho){const r2=mahoSpikeCurve(s,x0,y0,Math.abs(B.vx),B.vy);if(r2){if(r2.vx)B.vx=s*r2.vx;B.vy+=r2.dv||0;if(r2.n){B.cv=2*r2.n;B.cvn=r2.n;B.cva=r2.a}}}B.fx=22;ret()}
  else if(ck.hut){const up=Math.min(14*ck.sm,upMax),t=(up+Math.sqrt(up*up+2*GV*(GR-BR-B.y)))/GV,over=s>0?B.x>NX-100:B.x<NX+100,tgt=over?(s>0?NX+34:NX-34):(s>0?NX-34:NX+34);B.vy=-up;B.vx=clamp((tgt-B.x)/t,-12*ck.sm,12*ck.sm);if(over)ret()}
  else{B.vy=-Math.min(12.5*ck.sm,upMax);B.vx=(s*1.2+dir*1.5)*ck.sm}
  if(players===1&&c===P&&(type==='spike'||type==='set'))track(type);
@@ -1044,7 +1063,7 @@ function update(){
  /* ball */
  if(sacAnim){sacAnim.frame++;const u=Math.min(1,sacAnim.frame/24);sacAnim.x+=(sacAnim.tx-sacAnim.x)*.22;sacAnim.y+=(sacAnim.ty-sacAnim.y)*.22;if(sacAnim.frame>=30)sacAnim=null}
  if(ballReserved){B.x=P.x;B.y=P.y-125;B.vx=0;B.vy=0}
- if(st==='play'&&!ballReserved){if(B.cd>0)B.cd--;if(B.flt>0){B.flt--;B.vy+=(Math.random()-.5)*.4;B.vx+=(Math.random()-.5)*.16}if(B.top>0){B.top--;B.vy+=.05}B.vy+=GV*((hasFx(ab(),'feather')||hasFx(ab(),'ghost'))?.88:1)*(gravityGlitch>0?(1.1+Math.sin(tick/3)*.35):1);if(hasFx(ab(),'magnet')&&B.x<NX)B.vx+=clamp((P.x-B.x)*.0012,-.07,.07);if(B.vx<0&&B.x>BR+8){const m=-(B.x-BR-6)*.2;if(B.vx<m)B.vx=m}else if(B.vx>0){const m=(W-BR-6-B.x)*.2;if(B.vx>m)B.vx=m}B.x+=B.vx;B.y+=B.vy;B.rot+=(B.flt>0?0:B.vx*.05)+(B.top>0?(B.vx>0?.45:-.45):0);
+ if(st==='play'&&!ballReserved){if(B.cd>0)B.cd--;if(B.flt>0){B.flt--;B.vy+=(Math.random()-.5)*.4;B.vx+=(Math.random()-.5)*.16}if(B.top>0){B.top--;B.vy+=.05}if(B.cv>0){B.vy+=(B.cv>B.cvn?B.cva:-B.cva);B.cv--}B.vy+=GV*((hasFx(ab(),'feather')||hasFx(ab(),'ghost'))?.88:1)*(gravityGlitch>0?(1.1+Math.sin(tick/3)*.35):1);if(hasFx(ab(),'magnet')&&B.x<NX)B.vx+=clamp((P.x-B.x)*.0012,-.07,.07);if(B.vx<0&&B.x>BR+8){const m=-(B.x-BR-6)*.2;if(B.vx<m)B.vx=m}else if(B.vx>0){const m=(W-BR-6-B.x)*.2;if(B.vx>m)B.vx=m}B.x+=B.vx;B.y+=B.vy;B.rot+=(B.flt>0?0:B.vx*.05)+(B.top>0?(B.vx>0?.45:-.45):0);
   if(B.x<=BR&&B.vx<0){B.x=BR;B.vx=Math.abs(B.vx)*.88;}B.x=clamp(B.x,BR,W-BR);if(B.vy<0){const m=-Math.sqrt(2*GV*Math.max(0,B.y-BR-3));if(B.vy<m)B.vy=m}if(B.y<BR){B.y=BR;B.vy=0}
   const cx=clamp(B.x,NX-4,NX+4),cy=clamp(B.y,NT,GR);let ddx=B.x-cx,ddy=B.y-cy,d=Math.hypot(ddx,ddy);
   if(d<BR){if(d<.001){ddx=B.vx>0?-1:1;ddy=0;d=1}const nx=ddx/d,ny=ddy/d;B.x=cx+nx*BR;B.y=cy+ny*BR;
