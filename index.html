@@ -1411,9 +1411,9 @@ function zenGround(st){const q=g,n=st===2;
 const noAb=()=>cur==='boss'&&players===1&&shStage>=3;
 const BOSS=[null,
  {n:'THE DUO',sub:'Arjun sets it up. Shanav finishes it.',quote:'',spd:30,sp:20,as:1,h:210,dj:1},
- {n:'LOCK IN',sub:'Shanav locks in for the rest of the fight.',quote:'Be an egoist!',qWho:'a2',spd:32,sp:22,as:2,h:285,blink:1,blinkCD:80,dj:1,lv:3},
- {n:'GLITCH',sub:'Time locks, glitches, decoy balls and skeleton gorillas.',quote:'Start summoning glitches',qWho:'a',spd:34,sp:24,as:3,h:170,blink:1,blinkCD:70,dj:1,lv:4,lock:300,lockD:24,glitch:1,gCD:130,gor:1,gorN:2,gorCD:450},
- {n:'ALL OUT',sub:'Every ability. Arjun teleports, Shanav flies and smashes.',quote:'You really think you won?',qWho:'a',spd:35,sp:27,as:4,h:350,blink:1,blinkCD:45,tp:1,tpCD:28,fly:1,dj:1,lv:5,lock:200,lockD:24,flip:220,flipD:420,glitch:1,gCD:90,gor:1,gorN:3,gorCD:300,meteor:1}];
+ {n:'LOCK IN',sub:'Shanav locks in for the rest of the fight.',quote:'Be an egoist!',qWho:'a2',spd:32,sp:22,as:2,h:285,blink:1,blinkCD:80,dj:1,lv:3,spikeBoost:2.4},
+ {n:'GLITCH',sub:'Time locks, glitches, decoy balls and skeleton gorillas.',quote:'Start summoning glitches',qWho:'a',spd:34,sp:24,as:3,h:170,blink:1,blinkCD:70,fly:1,dj:1,lv:4,spikeBoost:2.4,lock:300,lockD:24,glitch:1,gCD:130,gor:1,gorN:2,gorCD:450},
+ {n:'ALL OUT',sub:'Every ability. Arjun teleports, Shanav flies and smashes.',quote:'You really think you won?',qWho:'a',spd:35,sp:27,as:4,h:350,blink:1,blinkCD:45,tp:1,tpCD:28,fly:1,dj:1,lv:5,spikeBoost:2.4,lock:200,lockD:24,flip:220,flipD:420,glitch:1,gCD:90,gor:1,gorN:3,gorCD:300,meteor:1}];
 function applyBossStage(k){const S=BOSS[k];shStage=k;cfg={...DIFF.boss,n:'Boss '+k+'/4: '+S.n,sp:S.sp,spd:S.spd};WIN=7;ps=0;as=S.as;bs={touch:0,age:0,t:0,tpAt:0,hd:null,arm:false,miss:false,blinkAt:90,lockAt:S.lock?300:9e9,flipAt:S.flip?420:9e9,glitchAt:S.glitch?200:9e9,gorAt:S.gor?240:9e9,lv:S.lv||0,glitch:null,tpDone:false,clones:[],socc:[],fx:[]};invertT=0;frz={p:0,a:0};A.dj=!!S.dj;A.used=false;if(k>=3){resetAbil();skels=[];say2('YOUR ABILITIES ARE SEALED!',130)}else if(k===2)say2('SHANAV LOCKS IN. FOR GOOD.',130)}
 function bossInit(){WIN=7;bossWinCut=false;applyBossStage(1);bgDone=false;setBG('boss')}
 function unlockBoss(){if(save.own.indexOf('gking')<0)save.own.push('gking');save.coupon=(save.coupon||0)+1;persist()}
@@ -1477,14 +1477,15 @@ function bossBump(ag,S){const ay=S.fly?80+Math.random()*110:110+Math.random()*11
   if(k==='balls'){for(let i=0;i<2;i++)bs.socc.push({x:60+Math.random()*780,y:50+Math.random()*60,vx:(Math.random()-.5)*7,vy:0,life:560,rot:0});if(bs.socc.length>4)bs.socc.splice(0,bs.socc.length-4);say2('ARJUN SPAWNS DECOY BALLS!',80);bossFx('blink',A2.x,A2.y-85)}
   else{bs.glitch={k:k,t:170};bs.tpDone=false;say2('ARJUN SUMMONS A GLITCH!',70);if(k==='wobble')B.flt=170;bossFx('blink',A2.x,A2.y-85)}}}
 function fitSpd(tx,x0,y0,hi,lo,vm){for(let sp=hi;sp>=lo;sp-=1.5){const t=Math.max(6,Math.abs(x0-tx)/sp),vy=(GR-BR-y0-.5*GV*t*t)/t,tn=(x0-(NX-24))/sp;if(vy<=vm&&y0+vy*tn+.5*GV*tn*tn<=NT-BR-6)return sp}return lo}
+function bossSet(ag,S){const tx=45+Math.random()*360,up=15.5+Math.random()*2.5,t=Math.max(8,(GR-BR-B.y)/Math.max(8,up*.72));B.vy=-up;B.vx=clamp((tx-B.x)/t,-8.5,-3.5);B.cd=0;B.last='a';B.fx=12;B.flt=0;B.top=0;serving=false;ag.sw={type:'set',t:16,done:true};bs.touch=1;bs.age=0;bs.hd=null;bossFx('spike',B.x,B.y)}
 function bossSpike(ag,S,x2){let tx;const r=Math.random();
- if(S.fly){const k=Math.floor(Math.random()*6);tx=[45+Math.random()*90,135+Math.random()*165,300+Math.random()*105,clamp(P.x+(Math.random()*2-1)*35,45,405),P.x>225?45+Math.random()*100:330+Math.random()*75,45+Math.random()*360][k]}
+ if(S.fly||S.spikeBoost){const k=Math.floor(Math.random()*8);tx=[25+Math.random()*65,105+Math.random()*95,205+Math.random()*105,330+Math.random()*85,clamp(P.x+(Math.random()*2-1)*24,25,425),P.x>225?25+Math.random()*90:340+Math.random()*80,45+Math.random()*380,clamp(430-P.x+(Math.random()-.5)*110,25,425)][k]}
  else if(r<.5)tx=45+Math.random()*360;
  else if(r<.68)tx=clamp(P.x+(Math.random()*2-1)*45,45,405);
  else if(r<.85)tx=310+Math.random()*95;
  else tx=45+Math.random()*60;
- const fast=!!S.fly&&ag===A&&A.y<GR-30,pace=fast?1:(Math.random()<.3?.45+Math.random()*.2:.6+Math.random()*.55);
- const x0=B.x,y0=B.y,spd=fast?fitSpd(tx,x0,y0,44,32,25)+Math.random()*1.5:fitSpd(tx,x0,y0,Math.max(13,Math.min(35,(S.spd+(bs.lv||0)*1.2+(x2||0))*pace)),13,17),t=Math.max(6,Math.abs(x0-tx)/spd);let vy=(GR-BR-y0-.5*GV*t*t)/t;const tn=(x0-(NX-24))/spd;
+ const fast=!!S.fly&&ag===A&&A.y<GR-30,pace=fast?1:(S.spikeBoost?1.8+Math.random()*1.25:(Math.random()<.3?.45+Math.random()*.2:.6+Math.random()*.55));
+ const x0=B.x,y0=B.y,baseSpd=Math.max(13,Math.min(45,(S.spd+(bs.lv||0)*1.2+(x2||0))*pace)),spd=fast?fitSpd(tx,x0,y0,76,52,34)+Math.random()*5:fitSpd(tx,x0,y0,Math.min(76,baseSpd*(S.spikeBoost||1)),28,28),t=Math.max(6,Math.abs(x0-tx)/spd);let vy=(GR-BR-y0-.5*GV*t*t)/t;const tn=(x0-(NX-24))/spd;
  if(tn>0){const yn=y0+vy*tn+.5*GV*tn*tn;if(yn>NT-BR-6)vy=(NT-BR-6-y0-.5*GV*tn*tn)/tn}
  B.vx=-spd;B.vy=clamp(vy,-12,fast?26:18);B.fx=22;B.cd=0;B.last='a';B.flt=0;B.top=0;serving=false;ag.sw={type:'spike',t:18,done:true};bs.touch=2;bossFx('spike',B.x,B.y);if(fast)bossFx('lock',B.x,B.y)}
 function bossAiStep(){const S=BOSS[shStage]||BOSS[1],sp=S.sp,play=st==='play',sx=NX+110;bs.t++;
@@ -1494,15 +1495,15 @@ function bossAiStep(){const S=BOSS[shStage]||BOSS[1],sp=S.sp,play=st==='play',sx
  if(B.last==='p')bs.touch=0;if(bs.touch===1&&++bs.age>170)bs.touch=0;
  let px=null;if(play){const p=predict();if(B.x>NX||p>NX+5)px=p}if(px!==null)px=aiFoolX(px);
  if(B.last==='p'&&!bs.arm){bs.arm=true;bs.miss=Math.random()<.1;A2.dvf=bs.miss}else if(B.last!=='p'){bs.arm=false;A2.dvf=false}
- let rec=null;if(play&&px!==null&&bs.touch===0)rec=A2;
+ let rec=null;if(play&&px!==null&&bs.touch===0)rec=A2;if(play&&px!==null&&bs.touch===0&&S.fly&&Math.hypot(B.x-A.x,B.y-(A.y-85*bossSc()))<190)rec=A;
  if(rec&&bs.clones.length){for(const c of bs.clones)if(c.born<=0&&Math.abs(c.x-px)<Math.abs(rec.x-px)*.85)rec=c}
  if(S.tp&&rec===A2&&!bs.miss&&play&&bs.touch===0&&bs.t>=bs.tpAt&&Math.abs(A2.x-px)>70){bs.tpAt=bs.t+(S.tpCD||28);bossFx('blink',A2.x,A2.y-85);A2.dv=null;A2.dvc=0;A2.y=GR;A2.vy=0;A2.x=clamp(px,NX+60,W-30);bossFx('blink',A2.x,A2.y-85);bossFx('spike',A2.x,A2.y-85)}
- const diveOK=ag=>!(S.fly&&ag===A)&&!(S.tp&&ag===A2&&!bs.miss),holdDive=ag=>px!==null&&!ag.dv&&diveOK(ag)&&Math.abs(px-ag.x)>=70&&Math.abs(px-ag.x)<=420;
- let tA=sx,tA2=820;if(rec===A)tA=holdDive(A)?A.x:clamp(px,NX+30,W-30);else if(bs.touch===1&&play&&B.vy>0)tA=clamp(predict(),NX+30,W-30);
- if(rec===A2)tA2=holdDive(A2)?A2.x:clamp(px,NX+30,W-30);
+ const diveOK=ag=>shStage>=2?true:!(S.fly&&ag===A)&&!(S.tp&&ag===A2&&!bs.miss),holdDive=ag=>shStage<2&&px!==null&&!ag.dv&&diveOK(ag)&&Math.abs(px-ag.x)>=70&&Math.abs(px-ag.x)<=420;
+ let tA=sx,tA2=820;if(rec===A||shStage>=2&&px!==null)tA=holdDive(A)?A.x:clamp(px,NX+30,W-30);else if(bs.touch===1&&play&&B.vy>0)tA=clamp(predict(),NX+30,W-30);
+ if(rec===A2||shStage>=2&&px!==null)tA2=holdDive(A2)?A2.x:clamp(px,NX+30,W-30);
  const flyA=!!S.fly&&play&&(bs.touch===1||rec===A);A.fl=flyA;
  const tb=(()=>{const dy=GR-85-B.y;if(dy<=0)return 0;const v=B.vy;return(-v+Math.sqrt(Math.max(0,v*v+2*GV*dy)))/GV})();
- for(const ag of[A,A2]){if(!ag.dv&&!(ag.dvc>0)&&play&&bs.touch===0&&rec===ag&&px!==null&&ag.y>=GR-2&&B.vy>-1&&diveOK(ag)){const d=px-ag.x;if(Math.abs(d)>=70&&Math.abs(d)<=420&&tb<=Math.ceil(Math.abs(d)/24)+5){const fl=ag===A2&&bs.miss;if(fl)A2.dvf=true;ag.dv={dir:Math.sign(d),d0:Math.sign(d),t:0,len:Math.ceil(Math.abs(d)/24)+Math.ceil(tb)+14,hit:false,short:fl?150+Math.random()*40:0};bossFx('spike',ag.x,ag.y-40)}}}
+ for(const ag of[A,A2]){if(!ag.dv&&!(ag.dvc>0)&&play&&bs.touch===0&&(rec===ag||shStage>=2)&&px!==null&&ag.y>=GR-2&&B.vy>-1&&diveOK(ag)){const d=px-ag.x;if((shStage>=2?Math.abs(d)>=12&&Math.abs(d)<=520:Math.abs(d)>=70&&Math.abs(d)<=420)&&tb<=Math.ceil(Math.abs(d)/24)+10){const fl=ag===A2&&bs.miss;if(fl)A2.dvf=true;ag.dv={dir:Math.sign(d),d0:Math.sign(d),t:0,len:Math.ceil(Math.abs(d)/24)+Math.ceil(tb)+14,hit:false,short:fl?150+Math.random()*40:0};bossFx('spike',ag.x,ag.y-40)}}}
  const mv=(ag,tx,jump)=>{if(ag.dv){const d=ag.dv;d.t++;const tg=clamp((px===null?ag.x:px)-d.d0*d.short,NX+30,W-30),ddx=tg-ag.x;ag.x=clamp(ag.x+Math.sign(ddx)*Math.min(26,Math.abs(ddx)),NX+30,W-30);if(Math.abs(ddx)>8)d.dir=Math.sign(ddx);ag.y=GR-30;ag.vy=0;ag.mv=false;if(ag.sw&&--ag.sw.t<=0)ag.sw=null;if(d.t>=d.len||B.y>GR-26||!play){ag.dv=null;ag.y=GR;ag.dvc=16}return}
   if(ag.dvc>0){ag.dvc--;ag.mv=false;ag.y=GR;ag.vy=0;if(ag.sw&&--ag.sw.t<=0)ag.sw=null;return}
   const dx=tx-ag.x;if(Math.abs(dx)>3)ag.x+=Math.sign(dx)*Math.min((sp*(ag.g?1.4:1)+(ag===A?(bs.lv||0)*.8:0))*1,Math.abs(dx));const y0=ag.y;stepBody(ag,0,jump,0,NX+30,W-30);if(ag===A&&flyA){ag.y=y0+clamp(clamp(B.y+55,95,GR)-y0,-15,15);ag.vy=0}ag.mv=Math.abs(dx)>3;if(ag.sw&&--ag.sw.t<=0)ag.sw=null};
@@ -1514,7 +1515,7 @@ function bossAiStep(){const S=BOSS[shStage]||BOSS[1],sp=S.sp,play=st==='play',sx
  if(S.dj){if(A.y>=GR)A.used=false;else if(!A.used&&play&&bs.touch===1&&A.vy>-2&&B.y<A.y-130){A.vy=-10.5;A.used=true}}
  if(play&&B.cd===0){
   for(const ag of[A,A2])if(ag.dv&&!ag.dv.hit&&!ag.dv.short&&bs.touch===0&&B.vy>-2&&Math.hypot(B.x-(ag.x+ag.dv.dir*50),B.y-(ag.y-30))<(ag===A?bossSc():1.25)*100){ag.dv.hit=true;ag.dv.len=ag.dv.t+7;bossBump(ag,S);bossFx('spike',B.x,B.y)}
-  if(B.cd!==0){}else if(bs.touch===0&&rec&&!(rec===A2&&A2.dvf)&&B.vy>-2&&nearBoss(rec,rec===A?122:(rec.g?125:104))){if(rec===A&&A.y<GR-30&&(B.y<GR-210||S.fly))bossSpike(A,S);else if(rec.g&&rec.y<GR-30&&B.y<GR-200)bossSpike(rec,S,4);else bossBump(rec,S)}
+  if(B.cd!==0){}else if(bs.touch===0&&rec&&!(rec===A2&&A2.dvf)&&B.vy>-2&&nearBoss(rec,rec===A?122:(rec.g?125:104))){if(S.fly&&rec===A)bossSet(A,S);else if(rec===A&&A.y<GR-30&&(B.y<GR-210||S.fly))bossSpike(A,S);else if(rec.g&&rec.y<GR-30&&B.y<GR-200)bossSpike(rec,S,4);else bossBump(rec,S)}
   else if(bs.touch===1&&B.vy>-3.5&&nearBoss(A,126)&&(A.y<GR-30||B.y>A.y-140)){if(bs.hd===null)bs.hd=Math.floor(Math.random()*(S.fly?15:10));if(bs.hd>0)bs.hd--;else{bs.hd=null;if(A.y<GR-30)bossSpike(A,S);else bossBump(A,S)}}}}
 function bossAura(){const S=BOSS[shStage]||BOSS[1],ch=bs.touch===1,x=A.x,y=A.y-106,r=ch?95+Math.sin(tick*.5)*8:62+shStage*4;const q=g.createRadialGradient(x,y,6,x,y,r);q.addColorStop(0,'hsla('+S.h+',100%,70%,'+(ch?.75:.22+.04*shStage)+')');q.addColorStop(1,'hsla('+S.h+',100%,50%,0)');g.fillStyle=q;g.fillRect(x-r,y-r,r*2,r*2);
  if((bs.lv||0)>0){g.save();g.strokeStyle='rgba(255,248,210,.85)';g.lineWidth=2.2;g.lineCap='round';const n=bs.lv*6,sc=bossSc();for(let i=0;i<n;i++){const a=i*2.399+tick*.04,r1=(60+((tick*3+i*17)%40))*sc/1.25,r2=r1+16+bs.lv*3;g.beginPath();g.moveTo(x+Math.cos(a)*r1,y+Math.sin(a)*r1);g.lineTo(x+Math.cos(a)*r2,y+Math.sin(a)*r2);g.stroke()}g.restore()}}
