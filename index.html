@@ -155,6 +155,10 @@ svg.hh.big{display:block;margin:0 auto 6px;width:110px;height:90px}
 .hh .win{animation:hTw 2.6s ease-in-out infinite}
 .hh .smk{transform-box:fill-box;transform-origin:center;animation:hSmoke 2.4s linear infinite}.hh .smk.b{animation-delay:1.2s}
 @media (prefers-reduced-motion:reduce){.hh .tw,.hh .win,.hh .smk{animation:none}}
+.disc{margin:10px 0 14px;padding:10px 14px;border-radius:12px;border:2px solid #f0b429;background:rgba(255,214,102,.16);text-align:center;font-size:13px;line-height:1.35}
+.disc b{display:block;letter-spacing:2px;color:#d98f00}
+.disc p{margin:4px 0}
+.disc i{display:block;margin-top:6px;font-weight:700}
 </style>
 </head>
 <body>
@@ -397,7 +401,7 @@ const P={x:225,y:GR,vy:0,sw:null,dir:0,col:'#ff6b5e',f:1};
 const A={x:675,y:GR,vy:0,sw:null,col:'#2b2f77',f:-1,off:0,react:0,plan:false};
 const A2={x:560,y:GR,vy:0,sw:null,mv:false};
 const B={x:225,y:150,vx:0,vy:0,rot:0,cd:0};
-let netPawn=null,pawnT=0,pawnD=0,jgPawnCD=0,jg=null,bossNewBall=false,sup=null,supCD=0,supBoost=0,bossNewKing=false,bossDiff='medium',bossMax=4,bossHardWin=false,bossFull=false,sharkWin=false,shark=null,notes=[],serving=false,serveBy='p';
+let netPawns=[],pawnT=0,pawnD=0,jgPawnCD=0,jg=null,bossNewBall=false,sup=null,supCD=0,supBoost=0,bossNewKing=false,bossDiff='medium',bossMax=4,bossHardWin=false,bossFull=false,sharkWin=false,shark=null,notes=[],serving=false,serveBy='p';
 const C={x:140,y:GR,vy:0,sw:null,mv:false},A3={x:670,y:GR,vy:0,sw:null,mv:false};let slowA=0,slowF=.55,usedWind=false,pendFx=null;
 let cloneOn=false,gim=0,phase=1,cut=null,blinkOn=false,blinkT=0,finalMsg=false,suddenDeath=false,flipT=0,invertT=0,shenCD=0;
 let gravityGlitch=0,roundTurbo=0,roundQuirkNo=0,playerSlow=0;
@@ -429,7 +433,7 @@ const STK=(c,h)=>'<svg class="stk '+c+'" viewBox="0 0 24 40" height="'+h+'" aria
 const HOUSE='<svg class="hh" viewBox="0 0 44 36" xmlns="http://www.w3.org/2000/svg"><ellipse cx="22" cy="33.5" rx="20" ry="2.6" fill="#fff"/><polygon points="36,9 31,19 41,19" fill="#2f8f5b"/><polygon points="36,15 30,26 42,26" fill="#3aa56b"/><rect x="35" y="26" width="2" height="5" fill="#6b4630"/><circle cx="36" cy="9" r="1.4" fill="#ffd23f"/><rect x="6" y="17" width="20" height="14.5" rx="2" fill="#c9573a"/><rect x="21.5" y="6" width="4.2" height="9" fill="#8d4a3a"/><rect x="20.8" y="5" width="5.6" height="2" rx="1" fill="#fff"/><circle class="smk" cx="23.6" cy="3.6" r="1.8" fill="#fff" opacity=".85"/><circle class="smk b" cx="24.4" cy="3.6" r="1.4" fill="#fff" opacity=".85"/><polygon points="3,17.6 16,6 29,17.6" fill="#7a3b2e"/><path d="M4.6 16.6L16 6.6L27.4 16.6L25.2 16.6L16 9.4L6.8 16.6Z" fill="#fff"/><rect class="win" x="9" y="20.5" width="6" height="6" rx="1" fill="#ffd966"/><rect x="18" y="22" width="5.2" height="9.5" rx="1" fill="#5b3a29"/><circle cx="20.6" cy="25.2" r="1.7" fill="none" stroke="#3aa56b" stroke-width="1"/><circle class="tw" cx="6.4" cy="15.2" r="1" fill="#ff4d4d"/><circle class="tw" cx="9.2" cy="12.3" r="1" fill="#ffd23f"/><circle class="tw" cx="12" cy="9.8" r="1" fill="#4da3ff"/><circle class="tw" cx="14.6" cy="7.9" r="1" fill="#5be37d"/><circle class="tw" cx="17.4" cy="7.9" r="1" fill="#ff4d4d"/><circle class="tw" cx="20" cy="9.8" r="1" fill="#ffd23f"/><circle class="tw" cx="22.8" cy="12.3" r="1" fill="#4da3ff"/><circle class="tw" cx="25.6" cy="15.2" r="1" fill="#5be37d"/></svg>';
 const SCR={
  holiday:()=>card('<h2>\u2744\uFE0F Holiday Update</h2><div class="snowBox">'+HOUSE.replace('class="hh"','class="hh big"')+'<div class="cs">COMING SOON</div><p>Something frosty is on the way. Stay tuned!</p></div>'+btn('Back','data-go="title"','ghost'),'min-width:440px'),
- bossdiff:()=>card('<h2>Final Boss Fight</h2><p>Choose a difficulty</p>'+btn('Rookie<small>2 stages · coins only, no other rewards</small>','data-bd="easy"','bdE')+btn('Formidable<small>4 stages · full rewards</small>','data-bd="medium"','bdM')+btn('Nightmare<small>Faster Shanav, flying from stage 2, abilities sealed from stage 2, 0.55s time locks · wins the Ice Cream Ball</small>','data-bd="hard"','bdH')+btn('Back','data-go="title"','ghost'),'min-width:440px'),
+ bossdiff:()=>card('<h2>Final Boss Fight</h2><div class="disc"><b>\u26A0\uFE0F DISCLAIMER</b><p>The Final Boss is extremely hard, and Nightmare is meant to be brutal. You will lose, probably a lot. That is part of the fight.</p><i>\u201CEvery loss is just practice for the win that comes after you refuse to quit.\u201D</i></div><p>Choose a difficulty</p>'+btn('Rookie<small>2 stages · coins only, no other rewards</small>','data-bd="easy"','bdE')+btn('Formidable<small>4 stages · full rewards</small>','data-bd="medium"','bdM')+btn('Nightmare<small>Faster Shanav, flying from stage 2, abilities sealed from stage 2, 0.55s time locks · wins the Ice Cream Ball</small>','data-bd="hard"','bdH')+btn('Back','data-go="title"','ghost'),'min-width:440px'),
  title:()=>card('<h1>Beach Volleyball</h1><p>Choose a mode</p>'+btn('Single Player','data-go="menu"')+btn('Two Player','data-go="two"')+btn(STK('tall',38)+STK('short',26)+'Final Boss Fight<small>vs Shanav & Arjun · Rookie / Formidable / Nightmare</small>','data-go="bossdiff"','boss')+btn(HOUSE+'Holiday Update<small>Coming soon</small>','data-go="holiday"','holi')+btn('Host / Join game','data-go="online"','ghost')+((save.coupon||0)>0?btn('\uD83C\uDF9F Ball Coupon ('+save.coupon+')','data-go="coupon"','ghost'):'')+'<div class="grid">'+btn('Shop','data-go="shop"','ghost sm')+btn('Quests'+(claimable()?' ('+claimable()+')':''),'data-go="quests"','ghost sm')+btn('Badges','data-go="badges"','ghost sm')+btn('Admin panel','data-go="admin"','ghost sm')+'</div>'+btn('Want your progress back? Talk to a dev','data-go="admin"','ghost sm')),
  coupon:()=>{const n=save.coupon||0,list=BALLS.filter(b=>!b.secret&&!b.hardOnly&&save.own.indexOf(b.id)<0);let rows='';for(const r of [...RORD,'ancient']){const grp=list.filter(b=>b.r===r);if(!grp.length)continue;const col=RAR[r][1];rows+='<div class="rhead" style="--rc:'+col+'">'+RAR[r][0]+'</div>';for(const b of grp)rows+='<div class="srow" style="--rc:'+col+';--rt:'+col+'22;--rs:'+col+'66"><span class="tile"><img class="th bth" src="'+ballThumb(b)+'"></span><b>'+esc(b.n)+rarTag(r)+(b.d2?'<small>'+b.d2+'</small>':'')+'</b><button class="buy" data-coupon="'+b.id+'"'+(n<1?' disabled':'')+'>Claim free</button></div>'}
   return card('<h2>\uD83C\uDF9F Ball Coupon</h2><p>'+(n>0?'Pick any ball in the game, even mystery wheel ones. Once you pick it, it is yours forever and the coupon is used up.':'You have no coupons.')+'</p><div class="coins">Coupons: '+n+'</div>'+(rows||'<p>You already own every ball!</p>')+btn('Back','data-go="title"','ghost'),'min-width:470px')},
@@ -810,11 +814,11 @@ function drawCutJaden(t){const al=Math.min(1,(t-60)/36)*(t>190?Math.max(0,(210-t
  for(let k=0;k<3;k++){const q=((t*2+k*30)%90)/90;g.save();g.globalAlpha=Math.max(0,(1-q)*.8*al);g.strokeStyle='#7fa6ff';g.lineWidth=3;g.beginPath();g.ellipse(cx,cy-20,20+q*90,14+q*60,0,0,7);g.stroke();g.restore()}
  g.save();g.translate(cx,cy);drawJadenBody(al,t,null);g.globalAlpha=al;g.fillStyle='#a9c8ff';g.font="800 15px Nunito,system-ui,sans-serif";g.textAlign='center';g.fillText('JADEN',0,-100);g.restore()}
 function jgStep(){const S=BOSS[shStage];if(!S||!S.ghost||cur!=='boss'||players!==1){jg=null;pawnT=0;return}
- if(!jg){jg={x:W+80,y:GR-95,vx:0,vy:0,tl:0,flip:0,fx:[],carry:0,sw:0,cd:0,spd:0,setN:0,claim:false,sum:0,lay:netPawn?0:1,layT:0,px:B.x,py:B.y};jgPawnCD=540;say2('JADEN THE GHOST JOINS THE FIGHT!',110)}
+ if(!jg){jg={x:W+80,y:GR-95,vx:0,vy:0,tl:0,flip:0,fx:[],carry:0,sw:0,cd:0,spd:0,setN:0,claim:false,sum:0,lay:netPawns.length?0:2,layT:0,px:B.x,py:B.y};jgPawnCD=540;say2('JADEN THE GHOST JOINS THE FIGHT!',110)}
  const s=jg,play=st==='play',C=jgCone({carry:1,sw:0});if(s.cd>0)s.cd--;s.claim=false;
  if(pawnD>0)pawnD--;
- if(netPawn){if(netPawn.drop>0){netPawn.drop--;if(netPawn.drop===0){for(let i=0;i<16;i++)netPawn.fx.push({x:netPawn.x+(Math.random()-.5)*50,y:GR-4-Math.random()*8,vx:(Math.random()-.5)*3,vy:-Math.random()*1.6,r:3+Math.random()*4,l:24})}}if(netPawn.hit>0)netPawn.hit--;for(const q of netPawn.fx){q.x+=q.vx;q.y+=q.vy;q.l--}netPawn.fx=netPawn.fx.filter(q=>q.l>0)}
- if(s.layT>0){s.layT--;if(s.layT===16)netPawn={x:NX+72,drop:18,hit:0,fx:[]};if(s.layT===0)s.lay=0}
+ for(const n of netPawns){if(n.drop>0){n.drop--;if(n.drop===0){for(let i=0;i<16;i++)n.fx.push({x:n.x+(Math.random()-.5)*50,y:GR-4-Math.random()*8,vx:(Math.random()-.5)*3,vy:-Math.random()*1.6,r:3+Math.random()*4,l:24})}}if(n.hit>0)n.hit--;for(const q of n.fx){q.x+=q.vx;q.y+=q.vy;q.l--}n.fx=n.fx.filter(q=>q.l>0)}
+ if(s.layT>0){s.layT--;if(s.layT===16)netPawns.push({x:s.lay>=2?NX+72:NX+200,drop:18,hit:0,fx:[]});if(s.layT===0)s.lay--}
  if(play){if(pawnT>0)pawnT--;if(jgPawnCD>0)jgPawnCD--;
   if(s.sum>0){s.sum--;if(s.sum===12){pawnT=180;pawnD=14;say2('JADEN SUMMONS A PAWN!',80)}}
   else if(jgPawnCD<=0&&pawnT===0&&s.carry===0){s.sum=24;jgPawnCD=900+Math.floor(Math.random()*160-80)}}
@@ -822,7 +826,7 @@ function jgStep(){const S=BOSS[shStage];if(!S||!S.ghost||cur!=='boss'||players!=
  if(s.sw>0&&s.carry>0)s.sw--;
  const homeX=clamp(A.x+95,NX+100,W-40),px0=s.x,mine=play&&B.x>NX-10,want1=mine&&(bs.touch===0||(bs.touch===1&&B.y>GR-130));
  let tx,ty,mv=24,idle=false;
- if(s.lay>0){tx=NX+150;ty=GR-125;mv=34;if(!s.layT&&Math.hypot(tx-s.x,ty-s.y)<30)s.layT=32}
+ if(s.lay>0){tx=(s.lay>=2?NX+72:NX+200)+78;ty=GR-125;mv=34;if(!s.layT&&Math.hypot(tx-s.x,ty-s.y)<30)s.layT=32}
  else if(s.carry>0){tx=homeX+30;ty=GR-120;mv=30;s.claim=true}
  else if(want1&&!s.lay){const dd=Math.hypot(B.x-s.x,B.y-s.y);mv=clamp(Math.hypot(B.vx,B.vy)*1.1,32,46);const lead=clamp(dd/mv,0,10);tx=B.x+B.vx*lead-C.ex;ty=B.y+B.vy*lead-C.ey;const tf=B.vy>0?Math.max(1,(GR-90-B.y)/B.vy):99;s.claim=dd/mv<=tf+3}
  else{idle=true;mv=13;tx=homeX+Math.sin(tick/47+1)*42+Math.sin(tick/19)*9;ty=GR-95+Math.sin(tick/29)*26+Math.sin(tick/11)*5}
@@ -844,25 +848,27 @@ function jgStep(){const S=BOSS[shStage];if(!S||!S.ghost||cur!=='boss'||players!=
   const near=Math.min(Math.hypot(B.x-ex,B.y-ey),supSeg(s.px,s.py,B.x,B.y,ex,ey)),lunge=B.vy>2&&B.y>GR-130;
   if(near<(lunge?90:56)){s.carry=1;s.sw=0;B.vx=0;B.vy=0;B.cd=3;B.last='a';bs.touch=1;bs.age=0;bs.lastHit=bs.t}}
  s.px=B.x;s.py=B.y}
-function pawnBounce(){const n=netPawn;if(!n||n.drop>0)return;
- const cs=[[n.x,GR-14,26],[n.x,GR-42,17],[n.x,GR-64,15]],x1=B.x,y1=B.y,x0=x1-B.vx,y0=y1-B.vy,dx=x1-x0,dy=y1-y0,a=dx*dx+dy*dy;let best=null;
- for(const c of cs){const R=c[2]+BR,fx=x0-c[0],fy=y0-c[1];let t;
-  if(fx*fx+fy*fy<=R*R)t=0;
-  else if(a>0){const b=2*(fx*dx+fy*dy),cc=fx*fx+fy*fy-R*R,disc=b*b-4*a*cc;if(disc<0)continue;t=(-b-Math.sqrt(disc))/(2*a);if(t<0||t>1)continue}
-  else continue;
-  if(!best||t<best.t)best={t,c}}
+function pawnBounce(){let best=null;const x1=B.x,y1=B.y,x0=x1-B.vx,y0=y1-B.vy,dx=x1-x0,dy=y1-y0,a=dx*dx+dy*dy;
+ for(const n of netPawns){if(n.drop>0)continue;
+  const cs=[[n.x,GR-14,26],[n.x,GR-42,17],[n.x,GR-64,15]];
+  for(const c of cs){const R=c[2]+BR,fx=x0-c[0],fy=y0-c[1];let t;
+   if(fx*fx+fy*fy<=R*R)t=0;
+   else if(a>0){const b=2*(fx*dx+fy*dy),cc=fx*fx+fy*fy-R*R,disc=b*b-4*a*cc;if(disc<0)continue;t=(-b-Math.sqrt(disc))/(2*a);if(t<0||t>1)continue}
+   else continue;
+   if(!best||t<best.t)best={t,c,n}}}
  if(!best)return;
- const c=best.c,hx=x0+dx*best.t,hy=y0+dy*best.t;let nx=hx-c[0],ny=hy-c[1];const l=Math.hypot(nx,ny)||1;nx/=l;ny/=l;
+ const c=best.c,n=best.n,hx=x0+dx*best.t,hy=y0+dy*best.t;let nx=hx-c[0],ny=hy-c[1];const l=Math.hypot(nx,ny)||1;nx/=l;ny/=l;
  B.x=c[0]+nx*(c[2]+BR+.5);B.y=c[1]+ny*(c[2]+BR+.5);
  const dot=B.vx*nx+B.vy*ny;if(dot<0){B.vx-=1.85*dot*nx;B.vy-=1.85*dot*ny;B.fx=Math.max(B.fx,6);n.hit=10}}
-function drawNetPawn(){const n=netPawn;if(!n||cur!=='boss'||mode!=='game')return;
- for(const q of n.fx){g.globalAlpha=Math.max(0,q.l/24);g.fillStyle='#d9c9a0';g.beginPath();g.arc(q.x,q.y,q.r,0,7);g.fill()}g.globalAlpha=1;
- const off=n.drop>0?-170*Math.pow(n.drop/18,2):0;
- g.save();g.translate(n.x,GR+off);g.scale(1.9,1.9);g.shadowColor='#a9c8ff';g.shadowBlur=n.hit>0?26:12;g.fillStyle=n.hit>0?'#8fb0ff':'#5b8cff';
- g.beginPath();g.ellipse(0,-2,15,5,0,0,7);g.fill();
- g.beginPath();g.moveTo(-11,-3);g.quadraticCurveTo(-7,-17,-5,-22);g.lineTo(5,-22);g.quadraticCurveTo(7,-17,11,-3);g.closePath();g.fill();
- g.beginPath();g.ellipse(0,-24,9,3.2,0,0,7);g.fill();
- g.beginPath();g.arc(0,-33,7.5,0,7);g.fill();g.restore()}
+function drawNetPawn(){if(!netPawns.length||cur!=='boss'||mode!=='game')return;
+ for(const n of netPawns){
+  for(const q of n.fx){g.globalAlpha=Math.max(0,q.l/24);g.fillStyle='#d9c9a0';g.beginPath();g.arc(q.x,q.y,q.r,0,7);g.fill()}g.globalAlpha=1;
+  const off=n.drop>0?-170*Math.pow(n.drop/18,2):0;
+  g.save();g.translate(n.x,GR+off);g.scale(1.9,1.9);g.shadowColor='#a9c8ff';g.shadowBlur=n.hit>0?26:12;g.fillStyle=n.hit>0?'#8fb0ff':'#5b8cff';
+  g.beginPath();g.ellipse(0,-2,15,5,0,0,7);g.fill();
+  g.beginPath();g.moveTo(-11,-3);g.quadraticCurveTo(-7,-17,-5,-22);g.lineTo(5,-22);g.quadraticCurveTo(7,-17,11,-3);g.closePath();g.fill();
+  g.beginPath();g.ellipse(0,-24,9,3.2,0,0,7);g.fill();
+  g.beginPath();g.arc(0,-33,7.5,0,7);g.fill();g.restore()}}
 function drawPawn(){if(pawnT<=0)return;const t=tick,drop=pawnD>0?-120*Math.pow(pawnD/14,2):0,x=P.x,y=P.y-128+drop+Math.sin(t/9)*2;
  g.save();g.translate(x,y);g.shadowColor='#a9c8ff';g.shadowBlur=14;g.fillStyle='#5b8cff';
  g.beginPath();g.ellipse(0,-2,15,5,0,0,7);g.fill();
@@ -1499,7 +1505,7 @@ function update(){
   const cx=clamp(B.x,NX-4,NX+4),cy=clamp(B.y,NT,GR);let ddx=B.x-cx,ddy=B.y-cy,d=Math.hypot(ddx,ddy);
   if(d<BR){if(d<.001){ddx=B.vx>0?-1:1;ddy=0;d=1}const nx=ddx/d,ny=ddy/d;B.x=cx+nx*BR;B.y=cy+ny*BR;
    const dot=B.vx*nx+B.vy*ny;if(dot<0){B.vx-=1.5*dot*nx;B.vy-=1.5*dot*ny}}
-  if(cur==='boss'&&netPawn)pawnBounce();
+  if(cur==='boss'&&netPawns.length)pawnBounce();
   B.vx=clamp(B.vx,cur==='boss'?-90:(marcusSpikeBoostA>0?-35.2:-24),supBoost>0?60:((marcusSpikeBoost>0||marcusSpikeBoostA>0)?35.2:24));B.vy=clamp(B.vy,-20,cur==='boss'?42:(supBoost>0?56:20));
   if(B.y+B.vy>=GR-BR-2&&goldReign[B.x<NX?'p':'a']>0){B.y=GR-BR-6;B.vy=-14;B.vx*=.7;banFx={x:B.x,y:GR-8,t:0,gold:true}}else if(B.y+B.vy>=GR-BR-2&&B.x<NX&&CK().id==='cyrus'&&ghosts.some(q=>!q.side||q.side==='p')){startGhostSacrifice()}else if(B.y+B.vy>=GR-BR-2&&B.x>NX&&CK2().id==='cyrus'&&ghosts.some(q=>q.side==='a')){startGhostSacrificeFor('a')}else if(B.y+B.vy>=GR-BR-2&&B.x<NX&&hasFx(ab(),'phoenix')&&!usedWind){usedWind=true;B.y=GR-BR-6;B.vy=-13;B.vx*=.4;say2('SECOND WIND!',70)}else if(B.y>=GR-BR)point(B.x<NX?'a':'p')}
  if(st==='serve'&&--stT<=0){st='play';say('',0)}
@@ -1612,7 +1618,7 @@ const BOSS0=[null,
  {n:'ALL OUT',sub:'Every ability. Arjun teleports, Shanav flies and smashes.',quote:'You really think you won?',qWho:'a',spd:35,sp:27,as:4,h:350,blink:1,blinkCD:45,tp:1,tpCD:28,fly:1,dj:1,lv:5,spikeBoost:2.4,vmax:82,lock:200,lockD:24,flip:220,flipD:420,glitch:1,gCD:90,gor:1,gorN:3,gorCD:300,meteor:1}];
 let BOSS=BOSS0;
 function makeBoss(d){return BOSS0.map((S,i)=>{if(!S||d!=='hard')return S;const o={...S};o.sp=S.sp+5;o.spd=S.spd+4;o.vmax=Math.min(90,(S.vmax||60)+10);o.noMiss=1;o.fast=1;if(i>=2)o.fly=1;if(i===4){o.ghost=1;o.quote='We summon you, JADEN!';o.qWho='a';o.sub='Every ability. Jaden the ghost joins as their setter.'}if(o.lock)o.lockD=33;return o})}
-function applyBossStage(k){const S=BOSS[k];jg=null;netPawn=null;pawnT=0;pawnD=0;shStage=k;cfg={...DIFF.boss,n:'Boss '+k+'/'+bossMax+(bossDiff==='hard'?' NIGHTMARE':bossDiff==='easy'?' ROOKIE':'')+': '+S.n,sp:S.sp,spd:S.spd};WIN=7;ps=0;as=S.as;bs={touch:0,age:0,t:0,tpAt:0,hd:null,arm:false,miss:false,blinkAt:90,lockAt:S.lock?300:9e9,flipAt:S.flip?420:9e9,glitchAt:S.glitch?200:9e9,gorAt:S.gor?240:9e9,lv:S.lv||0,glitch:null,tpDone:false,clones:[],socc:[],fx:[]};invertT=0;frz={p:0,a:0};A.dj=!!S.dj;A.used=false;if(k>=(bossDiff==='hard'?2:3)){resetAbil();skels=[];say2('YOUR ABILITIES ARE SEALED!',130)}else if(k===2)say2('SHANAV LOCKS IN. FOR GOOD.',130)}
+function applyBossStage(k){const S=BOSS[k];jg=null;netPawns=[];pawnT=0;pawnD=0;shStage=k;cfg={...DIFF.boss,n:'Boss '+k+'/'+bossMax+(bossDiff==='hard'?' NIGHTMARE':bossDiff==='easy'?' ROOKIE':'')+': '+S.n,sp:S.sp,spd:S.spd};WIN=7;ps=0;as=S.as;bs={touch:0,age:0,t:0,tpAt:0,hd:null,arm:false,miss:false,blinkAt:90,lockAt:S.lock?300:9e9,flipAt:S.flip?420:9e9,glitchAt:S.glitch?200:9e9,gorAt:S.gor?240:9e9,lv:S.lv||0,glitch:null,tpDone:false,clones:[],socc:[],fx:[]};invertT=0;frz={p:0,a:0};A.dj=!!S.dj;A.used=false;if(k>=(bossDiff==='hard'?2:3)){resetAbil();skels=[];say2('YOUR ABILITIES ARE SEALED!',130)}else if(k===2)say2('SHANAV LOCKS IN. FOR GOOD.',130)}
 function bossInit(){BOSS=makeBoss(bossDiff);bossMax=bossDiff==='easy'?2:4;bossHardWin=false;WIN=7;bossWinCut=false;applyBossStage(1);bgDone=false;setBG('boss')}
 function unlockBoss(){if(save.own.indexOf('gking')<0)save.own.push('gking');save.coupon=(save.coupon||0)+1;persist()}
 function claimCoupon(id){ensureSave();const b=BALLS.find(x=>x.id===id);if(!b||b.hardOnly||(save.coupon||0)<1||save.own.indexOf(id)>=0)return;save.coupon--;save.own.push(id);save.ball=id;persist();syncHint();shopTab='balls';show('shop')}
